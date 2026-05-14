@@ -1,0 +1,17 @@
+{
+  "name": "Wadai Economy Portal",
+  "short_name": "わだい経済",
+  "description": "和歌山大学経済学部生向けの時間割・卒業要件管理アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0F2F5",
+  "theme_color": "#003B71",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3429/3429158.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

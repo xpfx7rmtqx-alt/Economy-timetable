@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "Course": {
+      "title": "Course",
+      "description": "A single university course in the timetable",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "room": { "type": "string" },
+        "day": { "enum": ["Mon", "Tue", "Wed", "Thu", "Fri"] },
+        "period": { "type": "number" },
+        "credits": { "type": "number" },
+        "category": { "enum": ["common", "specialized", "related"] },
+        "semester": { "type": "string" }
+      },
+      "required": ["userId", "name", "day", "period", "credits", "category"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/courses": {
+      "schema": "Course",
+      "description": "User's individual course list"
+    }
+  }
+}
