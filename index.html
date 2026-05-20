@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wadai Economy Portal</title>
+  <title>Wadai Economy Portal (Quarter System)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -36,11 +36,12 @@
       });
 
       const [activeTab, setActiveTab] = useState('timetable');
+      const [activeQuarter, setActiveQuarter] = useState('1Q'); // 追加: 現在表示中のクォーター
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [editingCourse, setEditingCourse] = useState(null);
 
       const [formValues, setFormValues] = useState({
-        name: '', room: '', day: 'Mon', period: 1, credits: 2, category: 'common', semester: '前期'
+        name: '', room: '', day: 'Mon', period: 1, credits: 2, category: 'common', quarter: '1Q'
       });
 
       useEffect(() => {
@@ -59,6 +60,7 @@
         { key: 'Fri', label: '金' }
       ];
       const periods = [1, 2, 3, 4, 5];
+      const quarters = ['1Q', '2Q', '3Q', '4Q'];
 
       const categories = {
         common: { label: '共通教育科目', color: 'bg-emerald-500', text: 'text-emerald-700', bgLight: 'bg-emerald-50', border: 'border-emerald-200', target: 40 },
@@ -68,8 +70,13 @@
 
       const semesters = ['1年前期', '1年後期', '2年前期', '2年後期', '3年前期', '3年後期', '4年前期', '4年後期'];
 
+      // クォーターごとの授業フィルタリング
       const getCourseAt = (day, period) => {
-        return courses.find(c => c.day === day && Number(c.period) === Number(period));
+        return courses.find(c => 
+          (c.quarter || '1Q') === activeQuarter && 
+          c.day === day && 
+          Number(c.period) === Number(period)
+        );
       };
 
       const openModal = (day = 'Mon', period = 1, course = null) => {
@@ -85,7 +92,7 @@
             period: period,
             credits: 2,
             category: 'common',
-            semester: user.semester.includes('前期') ? '前期' : '後期'
+            quarter: activeQuarter // デフォルトは現在の表示クォーター
           });
         }
         setIsModalOpen(true);
@@ -140,9 +147,23 @@
             {activeTab === 'timetable' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-bold text-gray-800">今学期の時間割</h2>
-                  <p className="text-xs text-gray-500">※ コマを選択して入力できます</p>
+                  <h2 className="text-lg font-bold text-gray-800">時間割</h2>
+                  <p className="text-xs text-gray-500">※ {activeQuarter}を表示中</p>
                 </div>
+                
+                {/* クォーター選択タブ */}
+                <div className="flex space-x-2 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                  {quarters.map(q => (
+                    <button
+                      key={q}
+                      onClick={() => setActiveQuarter(q)}
+                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeQuarter === q ? 'bg-[#003B71] text-white' : 'bg-transparent text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
                   <table className="w-full border-collapse min-w-[650px]">
                     <thead>
@@ -235,33 +256,28 @@
                   <div className="p-4 border-b border-gray-200 bg-gray-50">
                     <h3 className="font-bold text-gray-700">登録済みの授業一覧 ({courses.length}件)</h3>
                   </div>
-                  {courses.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400 text-sm">
-                      登録されている授業はありません。「時間割」から授業を追加してください。
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-100">
-                      {courses.map(c => (
-                        <div key={c.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                          <div className="space-y-1">
-                            <div className="font-bold text-gray-800 text-sm">{c.name}</div>
-                            <div className="text-xs text-gray-500 flex items-center gap-3">
-                              <span>区分: {categories[c.category].label}</span>
-                              <span>単位: {c.credits}</span>
-                              <span>時間: {days.find(d => d.key === c.day)?.label}曜{c.period}限</span>
-                              {c.room && <span>教室: {c.room}</span>}
-                            </div>
+                  <div className="divide-y divide-gray-100">
+                    {courses.map(c => (
+                      <div key={c.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                        <div className="space-y-1">
+                          <div className="font-bold text-gray-800 text-sm">{c.name}</div>
+                          <div className="text-xs text-gray-500 flex items-center gap-3">
+                            <span>{c.quarter || '1Q'}</span>
+                            <span>区分: {categories[c.category].label}</span>
+                            <span>単位: {c.credits}</span>
+                            <span>時間: {days.find(d => d.key === c.day)?.label}曜{c.period}限</span>
+                            {c.room && <span>教室: {c.room}</span>}
                           </div>
-                          <button 
-                            onClick={() => openModal(c.day, c.period, c)}
-                            className="text-xs text-gray-500 hover:text-[#003B71] border border-gray-200 px-2.5 py-1 rounded hover:bg-gray-100 transition-colors"
-                          >
-                            編集
-                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <button 
+                          onClick={() => openModal(c.day, c.period, c)}
+                          className="text-xs text-gray-500 hover:text-[#003B71] border border-gray-200 px-2.5 py-1 rounded hover:bg-gray-100 transition-colors"
+                        >
+                          編集
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -270,7 +286,6 @@
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 max-w-xl mx-auto overflow-hidden">
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <h2 className="font-bold text-gray-800">学生情報の確認・設定</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">※ 入力した情報はブラウザに自動保存されます</p>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
@@ -279,7 +294,6 @@
                       type="text" 
                       value={user.name}
                       onChange={(e) => setUser({...user, name: e.target.value})}
-                      placeholder="例: 和大太郎"
                       className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]"
                     />
                   </div>
@@ -289,7 +303,6 @@
                       type="text" 
                       value={user.studentId}
                       onChange={(e) => setUser({...user, studentId: e.target.value})}
-                      placeholder="例: E23XXXX"
                       className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]"
                     />
                   </div>
@@ -308,6 +321,7 @@
             )}
           </main>
 
+          {/* 固定メニューバー */}
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40 pb-safe">
             <div className="max-w-7xl mx-auto flex justify-around items-center py-2 px-1">
               <button 
@@ -331,33 +345,16 @@
                 <span className="text-xl mb-0.5">👤</span>
                 <span>マイページ</span>
               </button>
-              <a 
-                href="https://kmags.wakayama-u.ac.jp/campusweb/campusportal.do?page=main" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 text-center"
-              >
-                <span className="text-xl mb-0.5">🏫</span>
-                <span className="leading-tight tracking-tighter truncate w-full px-0.5">教育サポート</span>
-              </a>
-              <a 
-                href="https://moodle2026.wakayama-u.ac.jp/2026/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 text-center"
-              >
-                <span className="text-xl mb-0.5">📝</span>
-                <span className="leading-tight tracking-tighter truncate w-full px-0.5">Moodle</span>
-              </a>
             </div>
           </div>
 
+          {/* 編集モーダル */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden">
                 <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                   <h3 className="font-bold text-gray-800">
-                    {editingCourse ? '授業の編集' : '新しい授業を追加'} ({days.find(d => d.key === formValues.day)?.label}曜{formValues.period}限)
+                    {editingCourse ? '授業の編集' : '新しい授業を追加'}
                   </h3>
                   <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button>
                 </div>
@@ -369,21 +366,20 @@
                       type="text"
                       value={formValues.name}
                       onChange={e => setFormValues({...formValues, name: e.target.value})}
-                      placeholder="例: マクロ経済学基礎"
                       className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none"
                       required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">教室 / 講義室</label>
-                      <input 
-                        type="text"
-                        value={formValues.room}
-                        onChange={e => setFormValues({...formValues, room: e.target.value})}
-                        placeholder="例: 101教室"
-                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none"
-                      />
+                      <label className="block text-xs font-bold text-gray-600 mb-1">学期区分</label>
+                      <select 
+                        value={formValues.quarter}
+                        onChange={e => setFormValues({...formValues, quarter: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white"
+                      >
+                        {quarters.map(q => <option key={q} value={q}>{q}</option>)}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1">単位数</label>
@@ -398,20 +394,8 @@
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">科目区分</label>
-                    <select 
-                      value={formValues.category}
-                      onChange={e => setFormValues({...formValues, category: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white"
-                    >
-                      <option value="common">共通教育科目 (教養・言語など)</option>
-                      <option value="specialized">専門教育科目 (経済学部専門科目)</option>
-                      <option value="related">関連科目・自由選択</option>
-                    </select>
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1">曜日</label>
                       <select 
                         value={formValues.day}
@@ -431,6 +415,18 @@
                         {periods.map(p => <option key={p} value={p}>{p}限</option>)}
                       </select>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">科目区分</label>
+                    <select 
+                      value={formValues.category}
+                      onChange={e => setFormValues({...formValues, category: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white"
+                    >
+                      <option value="common">共通教育科目</option>
+                      <option value="specialized">専門教育科目</option>
+                      <option value="related">関連科目・自由選択</option>
+                    </select>
                   </div>
                   <div className="pt-4 border-t border-gray-100 flex justify-between items-center gap-2">
                     {editingCourse ? (
