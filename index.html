@@ -13,9 +13,9 @@
       background-color: #f3f4f6;
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
     }
-    /* iOSのセーフエリア（底部のバー）に対応 */
+    /* iOSのセーフエリア（底部のバー）に対応 (xsのタイポを修正) */
     .pb-safe {
-      padding-bottom: calc(xs + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(0px + env(safe-area-inset-bottom, 0px));
     }
   </style>
 </head>
@@ -135,7 +135,7 @@
       const categoryCredits = (cat) => courses.filter(c => c.category === cat).reduce((sum, c) => sum + Number(c.credits), 0);
 
       return (
-        <div className="min-h-screen flex flex-col pb-24"> {/* 下部バーに被らないよう余白を確保 */}
+        <div className="min-h-screen flex flex-col pb-24">
           {/* --- ヘッダー --- */}
           <header className="bg-[#003B71] text-white shadow-md p-4 sticky top-0 z-30">
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -336,3 +336,190 @@
                       <option value="3年前期">3年前期</option>
                       <option value="3年後期">3年後期</option>
                       <option value="4年前期">4年前期</option>
+                      <option value="4年後期">4年後期</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* --- アプリ画面下部：固定ナビゲーションバー（ボトムタブ） --- */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40 pb-safe">
+            <div className="max-w-7xl mx-auto flex justify-around items-center py-2 px-1">
+              {/* 1. 時間割ボタン */}
+              <button 
+                onClick={() => setActiveTab('timetable')}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'timetable' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <span className="text-xl mb-0.5">📅</span>
+                <span>時間割</span>
+              </button>
+              
+              {/* 2. 単位進捗ボタン */}
+              <button 
+                onClick={() => setActiveTab('credits')}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'credits' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <span className="text-xl mb-0.5">🎓</span>
+                <span>単位進捗</span>
+              </button>
+
+              {/* 3. マイページ（プロフィール）ボタン */}
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'profile' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <span className="text-xl mb-0.5">👤</span>
+                <span>マイページ</span>
+              </button>
+
+              {/* 4. 教育サポートシステム（外部サイトへのアクセス項目） */}
+              <a 
+                href="https://kmags.wakayama-u.ac.jp/campusweb/campusportal.do?page=main" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 hover:text-sky-600 transition-colors text-center"
+              >
+                <span className="text-xl mb-0.5">🏫</span>
+                <span className="leading-tight tracking-tighter truncate w-full px-0.5">教育サポート</span>
+              </a>
+
+              {/* 5. Moodle 2026（外部サイトへのアクセス項目） */}
+              <a 
+                href="https://moodle2026.wakayama-u.ac.jp/2026/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 hover:text-orange-600 transition-colors text-center"
+              >
+                <span className="text-xl mb-0.5">📝</span>
+                <span className="leading-tight tracking-tighter truncate w-full px-0.5">Moodle</span>
+              </a>
+            </div>
+          </div>
+
+          {/* --- 授業追加・編集用モーダルウィンドウ --- */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden transform transition-all">
+                <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-800">
+                    {editingCourse ? '授業の編集' : '新しい授業を追加'} ({days.find(d => d.key === formValues.day)?.label}曜{formValues.period}限)
+                  </h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button>
+                </div>
+                
+                <form onSubmit={handleSaveCourse} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">授業名 <span className="text-red-500">*</span></label>
+                    <input 
+                      type="text"
+                      value={formValues.name}
+                      onChange={e => setFormValues({...formValues, name: e.target.value})}
+                      placeholder="例: マクロ経済学基礎"
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">教室 / 講義室</label>
+                      <input 
+                        type="text"
+                        value={formValues.room}
+                        onChange={e => setFormValues({...formValues, room: e.target.value})}
+                        placeholder="例: 101教室"
+                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">単位数</label>
+                      <select 
+                        value={formValues.credits}
+                        onChange={e => setFormValues({...formValues, credits: Number(e.target.value)})}
+                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden bg-white"
+                      >
+                        <option value={1}>1 単位</option>
+                        <option value={2}>2 単位</option>
+                        <option value={4}>4 単位</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">科目区分</label>
+                    <select 
+                      value={formValues.category}
+                      onChange={e => setFormValues({...formValues, category: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden bg-white"
+                    >
+                      <option value="common">共通教育科目 (教養・言語など)</option>
+                      <option value="specialized">専門教育科目 (経済学部専門科目)</option>
+                      <option value="related">関連科目・自由選択</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">曜日</label>
+                      <select 
+                        value={formValues.day}
+                        onChange={e => setFormValues({...formValues, day: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden bg-white"
+                      >
+                        {days.map(d => <option key={d.key} value={d.key}>{d.label}曜日</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">時限</label>
+                      <select 
+                        value={formValues.period}
+                        onChange={e => setFormValues({...formValues, period: Number(e.target.value)})}
+                        className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-hidden bg-white"
+                      >
+                        {periods.map(p => <option key={p} value={p}>{p}限</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100 flex justify-between items-center gap-2">
+                    {editingCourse ? (
+                      <button 
+                        type="button"
+                        onClick={() => handleDeleteCourse(editingCourse.id)}
+                        className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                      >
+                        削除する
+                      </button>
+                    ) : <div />}
+
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => setIsModalOpen(false)}
+                        className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button 
+                        type="submit"
+                        className="bg-[#003B71] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#00274d] transition-colors shadow-xs"
+                      >
+                        保存する
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
