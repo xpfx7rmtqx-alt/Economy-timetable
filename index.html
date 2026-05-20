@@ -66,7 +66,6 @@
         related: { label: '関連科目', color: 'bg-amber-500', text: 'text-amber-700', bgLight: 'bg-amber-50', border: 'border-amber-200', target: 20 }
       };
 
-      // 大量にあった選択肢をスリムに配列化
       const semesters = ['1年前期', '1年後期', '2年前期', '2年後期', '3年前期', '3年後期', '4年前期', '4年後期'];
 
       const getCourseAt = (day, period) => {
@@ -281,7 +280,7 @@
                       value={user.name}
                       onChange={(e) => setUser({...user, name: e.target.value})}
                       placeholder="例: 和大太郎"
-                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71] transition-colors"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]"
                     />
                   </div>
                   <div>
@@ -291,7 +290,7 @@
                       value={user.studentId}
                       onChange={(e) => setUser({...user, studentId: e.target.value})}
                       placeholder="例: E23XXXX"
-                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71] transition-colors"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]"
                     />
                   </div>
                   <div>
@@ -299,9 +298,8 @@
                     <select 
                       value={user.semester}
                       onChange={(e) => setUser({...user, semester: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71] bg-white transition-colors"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71] bg-white"
                     >
-                      {/* 配列からループで生成するように変更し、エラーを完全回避 */}
                       {semesters.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
@@ -314,21 +312,21 @@
             <div className="max-w-7xl mx-auto flex justify-around items-center py-2 px-1">
               <button 
                 onClick={() => setActiveTab('timetable')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'timetable' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'timetable' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}
               >
                 <span className="text-xl mb-0.5">📅</span>
                 <span>時間割</span>
               </button>
               <button 
                 onClick={() => setActiveTab('credits')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'credits' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'credits' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}
               >
                 <span className="text-xl mb-0.5">🎓</span>
                 <span>単位進捗</span>
               </button>
               <button 
                 onClick={() => setActiveTab('profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${activeTab === 'profile' ? 'text-[#003B71] font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'profile' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}
               >
                 <span className="text-xl mb-0.5">👤</span>
                 <span>マイページ</span>
@@ -337,7 +335,7 @@
                 href="https://kmags.wakayama-u.ac.jp/campusweb/campusportal.do?page=main" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 hover:text-sky-600 transition-colors text-center"
+                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 text-center"
               >
                 <span className="text-xl mb-0.5">🏫</span>
                 <span className="leading-tight tracking-tighter truncate w-full px-0.5">教育サポート</span>
@@ -346,7 +344,7 @@
                 href="https://moodle2026.wakayama-u.ac.jp/2026/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 hover:text-orange-600 transition-colors text-center"
+                className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-gray-400 text-center"
               >
                 <span className="text-xl mb-0.5">📝</span>
                 <span className="leading-tight tracking-tighter truncate w-full px-0.5">Moodle</span>
@@ -356,7 +354,7 @@
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden transform transition-all">
+              <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden">
                 <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                   <h3 className="font-bold text-gray-800">
                     {editingCourse ? '授業の編集' : '新しい授業を追加'} ({days.find(d => d.key === formValues.day)?.label}曜{formValues.period}限)
@@ -439,4 +437,37 @@
                       <button 
                         type="button"
                         onClick={() => handleDeleteCourse(editingCourse.id)}
-                        className="bg-red-50 text-red-600 border border-red-
+                        className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium"
+                      >
+                        削除する
+                      </button>
+                    ) : <div />}
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => setIsModalOpen(false)}
+                        className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium"
+                      >
+                        キャンセル
+                      </button>
+                      <button 
+                        type="submit"
+                        className="bg-[#003B71] text-white px-5 py-2 rounded-lg text-sm font-medium"
+                      >
+                        保存する
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
