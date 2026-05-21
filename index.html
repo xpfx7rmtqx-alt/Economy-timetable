@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Wadai Economy Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -10,11 +10,19 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     body {
-      background-color: #f3f4f6;
+      background-color: #f4f7fb;
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
     .pb-safe {
       padding-bottom: calc(0px + env(safe-area-inset-bottom, 0px));
+    }
+    .pt-safe {
+      padding-top: calc(0px + env(safe-area-inset-top, 0px));
+    }
+    /* スクロールバー非表示 */
+    ::-webkit-scrollbar {
+      display: none;
     }
   </style>
 </head>
@@ -30,21 +38,27 @@
         return saved ? JSON.parse(saved) : { name: '', studentId: '', semester: '1年前期' };
       });
 
+      // 画像のシラバスに近い初期データをセット
+      const initialCourses = [
+        { id: '1', name: '食料経済学A', room: '西2号館W2-101', day: 'Tue', period: 1, credits: 2, category: 'specialized', quarter: '1Q' },
+        { id: '2', name: '専門演習', room: '西2号館W2-201', day: 'Mon', period: 2, credits: 2, category: 'specialized', quarter: '1Q' },
+        { id: '3', name: '地球科学', room: '東1号館E1-102', day: 'Tue', period: 2, credits: 2, category: 'common', quarter: '1Q' },
+        { id: '4', name: '天文学', room: '東1号館E1-103', day: 'Wed', period: 2, credits: 2, category: 'common', quarter: '1Q' },
+        { id: '5', name: '宇宙開発論', room: 'E1-101', day: 'Thu', period: 2, credits: 2, category: 'common', quarter: '1Q' },
+        { id: '6', name: '国際貿易論A', room: 'E1-101', day: 'Tue', period: 3, credits: 2, category: 'specialized', quarter: '1Q' },
+        { id: '7', name: '公益事業論A', room: 'W2-101', day: 'Wed', period: 3, credits: 2, category: 'specialized', quarter: '1Q' },
+        { id: '8', name: '西洋経済史', room: '西2号館W2-101', day: 'Thu', period: 3, credits: 2, category: 'specialized', quarter: '1Q' },
+        { id: '9', name: '生と死を考える', room: 'E1-101', day: 'Mon', period: 4, credits: 2, category: 'common', quarter: '1Q' },
+        { id: '10', name: 'データを用いた実証分析入門', room: '西2号館W2-102', day: 'Tue', period: 4, credits: 2, category: 'specialized', quarter: '1Q' },
+      ];
+
       const [courses, setCourses] = useState(() => {
         const saved = localStorage.getItem('wadai_courses');
-        return saved ? JSON.parse(saved) : [];
+        return saved ? JSON.parse(saved) : initialCourses;
       });
 
       const [activeTab, setActiveTab] = useState('timetable');
-      // 学期設定に基づき初期クォーターを決定
-      const [activeQuarter, setActiveQuarter] = useState(() => {
-        const savedUser = localStorage.getItem('wadai_user');
-        if (savedUser) {
-          const parsed = JSON.parse(savedUser);
-          return parsed.semester.includes('後期') ? '3Q' : '1Q';
-        }
-        return '1Q';
-      });
+      const [activeQuarter, setActiveQuarter] = useState('1Q');
       
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [editingCourse, setEditingCourse] = useState(null);
@@ -55,9 +69,7 @@
 
       useEffect(() => {
         localStorage.setItem('wadai_user', JSON.stringify(user));
-        // 学期が変更されたら、クォーターも自動的に切り替えるロジック
-        setActiveQuarter(user.semester.includes('後期') ? '3Q' : '1Q');
-      }, [user.semester]);
+      }, [user]);
 
       useEffect(() => {
         localStorage.setItem('wadai_courses', JSON.stringify(courses));
@@ -70,15 +82,18 @@
         { key: 'Thu', label: '木' },
         { key: 'Fri', label: '金' }
       ];
-      const periods = [1, 2, 3, 4, 5];
-      const quarters = ['1Q', '2Q', '3Q', '4Q'];
-
-      const categories = {
-        common: { label: '共通教育科目', color: 'bg-emerald-500', text: 'text-emerald-700', bgLight: 'bg-emerald-50', border: 'border-emerald-200', target: 40 },
-        specialized: { label: '専門教育科目', color: 'bg-blue-500', text: 'text-blue-700', bgLight: 'bg-blue-50', border: 'border-blue-200', target: 64 },
-        related: { label: '関連科目', color: 'bg-amber-500', text: 'text-amber-700', bgLight: 'bg-amber-50', border: 'border-amber-200', target: 20 }
+      
+      const periods = [1, 2, 3, 4, 5, 6];
+      const periodTimes = {
+        1: { start: '09:10', end: '10:40' },
+        2: { start: '10:50', end: '12:20' },
+        3: { start: '13:10', end: '14:40' },
+        4: { start: '14:50', end: '16:20' },
+        5: { start: '16:30', end: '18:00' },
+        6: { start: '18:10', end: '19:40' }
       };
-
+      
+      const quarters = ['1Q', '2Q', '3Q', '4Q'];
       const semesters = ['1年前期', '1年後期', '2年前期', '2年後期', '3年前期', '3年後期', '4年前期', '4年後期'];
 
       const getCourseAt = (day, period) => {
@@ -122,62 +137,75 @@
         }
       };
 
-      const totalCredits = courses.reduce((sum, c) => sum + Number(c.credits), 0);
-      const categoryCredits = (cat) => courses.filter(c => c.category === cat).reduce((sum, c) => sum + Number(c.credits), 0);
+      // 今日の曜日を取得（UIの青丸ハイライト用）
+      const todayIndex = new Date().getDay() - 1; // 0=Mon, 4=Fri
 
       return (
-        <div className="min-h-screen flex flex-col pb-24">
-          <header className="bg-[#003B71] text-white shadow-md p-4 sticky top-0 z-30">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-              <div>
-                <h1 className="text-xl font-bold tracking-wider text-center sm:text-left">Wadai Economy Portal</h1>
-                <p className="text-xs text-blue-200 mt-0.5 text-center sm:text-left">和歌山大学経済学部生向け ポータル</p>
-              </div>
-              <div className="flex items-center gap-3 bg-white/10 px-4 py-1.5 rounded-lg text-xs">
-                <div className="text-center sm:text-right">
-                  <span className="font-medium mr-2">{user.name || '未設定'}</span>
-                  <span className="text-blue-200">{user.studentId ? `学籍番号: ${user.studentId}` : '学籍番号未設定'} | {user.semester}</span>
-                </div>
+        <div className="min-h-screen flex flex-col">
+          
+          {/* Header - 画像に合わせた白背景のヘッダー */}
+          <header className="bg-white text-gray-800 sticky top-0 z-30 pt-safe border-b border-gray-100">
+            <div className="flex justify-between items-center px-4 py-3 relative max-w-7xl mx-auto w-full">
+              <div className="flex-1"></div>
+              <h1 className="text-[19px] font-bold flex-1 text-center whitespace-nowrap">2026年 1学期</h1>
+              <div className="flex-1 flex justify-end">
+                <button onClick={() => alert('下部のタブバー上にあるQ切り替えボタンを使用してください。')} className="text-[11px] font-bold border border-gray-400 text-gray-600 rounded-full px-3 py-1.5 whitespace-nowrap">
+                  学期切替
+                </button>
               </div>
             </div>
           </header>
 
-          <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+          <main className="flex-1 w-full mx-auto pb-32">
+            
             {activeTab === 'timetable' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-bold text-gray-800">時間割</h2>
-                  <p className="text-xs text-gray-500">※ {activeQuarter}を表示中</p>
-                </div>
-                <div className="flex space-x-2 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
-                  {quarters.map(q => (
-                    <button key={q} onClick={() => setActiveQuarter(q)} className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeQuarter === q ? 'bg-[#003B71] text-white' : 'bg-transparent text-gray-600 hover:bg-gray-50'}`}>
-                      {q}
-                    </button>
-                  ))}
-                </div>
-                <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-                  <table className="w-full border-collapse min-w-[650px]">
+              <div className="bg-[#f4f7fb] min-h-full">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-separate min-w-[320px]" style={{ borderSpacing: '6px' }}>
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="w-16 p-3 text-center text-xs font-bold text-gray-500 tracking-wider">時限</th>
-                        {days.map(d => <th key={d.key} className="p-3 text-center text-sm font-bold text-gray-700 tracking-wider w-1/5 border-l border-gray-200">{d.label}曜日</th>)}
+                      <tr>
+                        <th className="w-10"></th>
+                        {days.map((d, i) => (
+                          <th key={d.key} className="text-sm font-bold text-gray-500 pb-1 pt-2 w-1/5">
+                            <div className={`mx-auto flex items-center justify-center w-7 h-7 rounded-full ${i === (todayIndex >= 0 && todayIndex <= 4 ? todayIndex : 3) ? 'bg-[#3b82f6] text-white' : ''}`}>
+                              {d.label}
+                            </div>
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {periods.map(p => (
-                        <tr key={p} className="border-b border-gray-100 last:border-none">
-                          <td className="p-4 text-center bg-gray-50/50"><div className="font-bold text-gray-700">{p}</div><div className="text-[10px] text-gray-400 mt-0.5">限</div></td>
+                        <tr key={p}>
+                          <td className="align-top pt-2">
+                            <div className="flex flex-col items-center text-gray-400">
+                              <span className="text-lg font-bold text-gray-500 leading-none">{p}</span>
+                              <span className="text-[8px] leading-tight mt-1">{periodTimes[p].start}</span>
+                              <span className="text-[8px] leading-none">|</span>
+                              <span className="text-[8px] leading-tight">{periodTimes[p].end}</span>
+                            </div>
+                          </td>
                           {days.map(d => {
                             const course = getCourseAt(d.key, p);
                             return (
-                              <td key={d.key} onClick={() => openModal(d.key, p, course)} className="p-2 border-l border-gray-100 align-top h-28 cursor-pointer transition-all hover:bg-gray-50 group relative">
+                              <td key={d.key} className="h-[105px] align-top" onClick={() => openModal(d.key, p, course)}>
                                 {course ? (
-                                  <div className={`h-full w-full rounded-lg p-2 border ${categories[course.category].border} ${categories[course.category].bgLight} flex flex-col justify-between shadow-sm`}>
-                                    <div><div className="text-xs font-bold text-gray-800 line-clamp-2 leading-snug">{course.name}</div>{course.room && <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-0.5">📍 {course.room}</div>}</div>
-                                    <div className="flex justify-between items-center mt-2 pt-1 border-t border-gray-200/50"><span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase text-white ${categories[course.category].color}`}>{course.credits}単位</span><span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">編集</span></div>
+                                  <div className="h-full w-full bg-[#b5d2f6] rounded-[14px] flex flex-col justify-between items-center p-1.5 relative overflow-hidden cursor-pointer shadow-sm active:opacity-70 transition-opacity">
+                                    <div className="flex-1 flex items-center justify-center w-full px-0.5">
+                                      <span className="text-[11px] font-bold text-gray-800 text-center leading-snug break-words" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {course.name}
+                                      </span>
+                                    </div>
+                                    {course.room && (
+                                      <div className="bg-white rounded-full px-2 py-0.5 text-[9px] font-medium text-gray-600 truncate w-[95%] text-center mt-1">
+                                        {course.room}
+                                      </div>
+                                    )}
                                   </div>
-                                ) : <div className="h-full w-full border border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-300 group-hover:text-gray-400 group-hover:border-gray-300 transition-colors"><span className="text-xl font-light">+</span></div>}
+                                ) : (
+                                  <div className="h-full w-full bg-white rounded-[14px] flex items-center justify-center cursor-pointer active:bg-gray-50 transition-colors">
+                                  </div>
+                                )}
                               </td>
                             );
                           })}
@@ -186,75 +214,175 @@
                     </tbody>
                   </table>
                 </div>
+
+                {/* 学期（第1Q〜第4Q）切り替え - 下部配置 */}
+                <div className="fixed bottom-[65px] left-0 right-0 px-4 py-2 bg-gradient-to-t from-[#f4f7fb] via-[#f4f7fb] to-transparent z-20 flex justify-center gap-2 pb-safe">
+                  <div className="bg-white rounded-full shadow-md p-1 flex w-full max-w-sm border border-gray-100">
+                    {quarters.map(q => (
+                      <button
+                        key={q}
+                        onClick={() => setActiveQuarter(q)}
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all ${activeQuarter === q ? 'bg-[#3b82f6] text-white shadow' : 'bg-transparent text-gray-500'}`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'links' && (
+              <div className="p-4 space-y-4 max-w-2xl mx-auto mt-4">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 px-1">外部サイト</h2>
+                
+                <a href="https://moodle2026.wakayama-u.ac.jp/2026/" target="_blank" rel="noopener noreferrer" className="block bg-white border border-gray-200 rounded-2xl p-5 flex items-center shadow-sm active:bg-gray-50 transition-colors">
+                  <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0">
+                    📚
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-800">和歌山大学Moodle2026</div>
+                    <div className="text-[11px] text-gray-500 mt-1">オンライン授業・課題提出プラットフォーム</div>
+                  </div>
+                  <div className="ml-auto text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </div>
+                </a>
+
+                <a href="https://kmags.wakayama-u.ac.jp/campusweb/campusportal.do?page=main" target="_blank" rel="noopener noreferrer" className="block bg-white border border-gray-200 rounded-2xl p-5 flex items-center shadow-sm active:bg-gray-50 transition-colors">
+                  <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0">
+                    🏫
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-800">教育サポートシステム</div>
+                    <div className="text-[11px] text-gray-500 mt-1">履修登録・成績照会・シラバス検索 (CampusWeb)</div>
+                  </div>
+                  <div className="ml-auto text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </div>
+                </a>
               </div>
             )}
 
             {activeTab === 'credits' && (
-              <div className="space-y-6">
-                <h2 className="text-lg font-bold text-gray-800">卒業要件単位の確認</h2>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-1 bg-[#003B71]/5 p-4 rounded-lg flex flex-col justify-center items-center border border-[#003B71]/10">
-                    <div className="text-sm font-medium text-gray-600">登録済み総単位数</div>
-                    <div className="text-4xl font-extrabold text-[#003B71] my-1">{totalCredits} <span className="text-sm font-normal text-gray-500">/ 124 単位</span></div>
-                    <div className="w-full bg-gray-200 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-[#003B71] h-full transition-all duration-500" style={{ width: `${Math.min((totalCredits / 124) * 100, 100)}%` }}></div></div>
-                  </div>
-                  <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {Object.entries(categories).map(([key, cat]) => {
-                      const current = categoryCredits(key);
-                      return (
-                        <div key={key} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-between">
-                          <div><div className="text-xs font-bold text-gray-500">{cat.label}</div><div className={`text-xl font-bold mt-1 ${cat.text}`}>{current} <span className="text-xs font-normal text-gray-400">/ {cat.target}</span></div></div>
-                          <div className="w-full bg-gray-200 h-1.5 rounded-full mt-3 overflow-hidden"><div className={`${cat.color} h-full transition-all duration-500`} style={{ width: `${Math.min((current / cat.target) * 100, 100)}%` }}></div></div>
-                        </div>
-                      );
-                    })}
+              <div className="p-4 mt-4 max-w-2xl mx-auto space-y-4">
+                <h2 className="text-lg font-bold text-gray-800 mb-2 px-1">単位進捗</h2>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-500">登録済み総単位数</div>
+                    <div className="text-5xl font-extrabold text-[#3b82f6] my-2">{courses.reduce((sum, c) => sum + Number(c.credits), 0)} <span className="text-base font-normal text-gray-400">/ 124 単位</span></div>
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'profile' && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 max-w-xl mx-auto overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50"><h2 className="font-bold text-gray-800">学生情報の確認・設定</h2></div>
-                <div className="p-6 space-y-4">
-                  <div><label className="block text-xs font-bold text-gray-600 uppercase mb-1">氏名 / ニックネーム</label><input type="text" value={user.name} onChange={(e) => setUser({...user, name: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 uppercase mb-1">学籍番号</label><input type="text" value={user.studentId} onChange={(e) => setUser({...user, studentId: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71]" /></div>
+              <div className="p-4 mt-4 max-w-2xl mx-auto space-y-4">
+                <h2 className="text-lg font-bold text-gray-800 mb-2 px-1">マイページ</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-5 space-y-5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">現在の所属・学期</label>
-                    <select value={user.semester} onChange={(e) => setUser({...user, semester: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#003B71] bg-white">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">氏名</label>
+                    <input type="text" value={user.name} onChange={(e) => setUser({...user, name: e.target.value})} className="w-full border-b border-gray-200 py-2 text-sm focus:outline-none focus:border-[#3b82f6] bg-transparent" placeholder="未設定" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">学籍番号</label>
+                    <input type="text" value={user.studentId} onChange={(e) => setUser({...user, studentId: e.target.value})} className="w-full border-b border-gray-200 py-2 text-sm focus:outline-none focus:border-[#3b82f6] bg-transparent" placeholder="未設定" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">学期</label>
+                    <select value={user.semester} onChange={(e) => setUser({...user, semester: e.target.value})} className="w-full border-b border-gray-200 py-2 text-sm focus:outline-none focus:border-[#3b82f6] bg-transparent">
                       {semesters.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <p className="text-[10px] text-gray-400 mt-2">※選択すると時間割のデフォルト学期が切り替わります。</p>
                   </div>
                 </div>
               </div>
             )}
           </main>
 
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40 pb-safe">
-            <div className="max-w-7xl mx-auto flex justify-around items-center py-2 px-1">
-              <button onClick={() => setActiveTab('timetable')} className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'timetable' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}><span className="text-xl mb-0.5">📅</span><span>時間割</span></button>
-              <button onClick={() => setActiveTab('credits')} className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'credits' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}><span className="text-xl mb-0.5">🎓</span><span>単位進捗</span></button>
-              <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium ${activeTab === 'profile' ? 'text-[#003B71] font-bold' : 'text-gray-400'}`}><span className="text-xl mb-0.5">👤</span><span>マイページ</span></button>
+          {/* Bottom Navigation */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40 pb-safe">
+            <div className="max-w-7xl mx-auto flex justify-around items-center h-[65px] px-2">
+              <button onClick={() => setActiveTab('timetable')} className={`flex flex-col items-center justify-center w-full h-full text-[10px] ${activeTab === 'timetable' ? 'text-[#3b82f6] font-bold' : 'text-gray-400'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill={activeTab === 'timetable' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'timetable' ? 0 : 2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                時間割
+              </button>
+              <button onClick={() => setActiveTab('credits')} className={`flex flex-col items-center justify-center w-full h-full text-[10px] ${activeTab === 'credits' ? 'text-[#3b82f6] font-bold' : 'text-gray-400'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill={activeTab === 'credits' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'credits' ? 0 : 2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                スケジュール
+              </button>
+              <button onClick={() => setActiveTab('links')} className={`flex flex-col items-center justify-center w-full h-full text-[10px] ${activeTab === 'links' ? 'text-[#3b82f6] font-bold' : 'text-gray-400'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill={activeTab === 'links' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'links' ? 0 : 2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+                外部サイト
+              </button>
+              <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center justify-center w-full h-full text-[10px] ${activeTab === 'profile' ? 'text-[#3b82f6] font-bold' : 'text-gray-400'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill={activeTab === 'profile' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'profile' ? 0 : 2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                マイページ
+              </button>
             </div>
           </div>
 
+          {/* Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 className="font-bold text-gray-800">{editingCourse ? '授業の編集' : '新しい授業を追加'}</h3><button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button></div>
-                <form onSubmit={handleSaveCourse} className="p-6 space-y-4">
-                  <div><label className="block text-xs font-bold text-gray-600 mb-1">授業名 <span className="text-red-500">*</span></label><input type="text" value={formValues.name} onChange={e => setFormValues({...formValues, name: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none" required /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-xs font-bold text-gray-600 mb-1">学期区分</label><select value={formValues.quarter} onChange={e => setFormValues({...formValues, quarter: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white">{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
-                    <div><label className="block text-xs font-bold text-gray-600 mb-1">単位数</label><select value={formValues.credits} onChange={e => setFormValues({...formValues, credits: Number(e.target.value)})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white"><option value={1}>1 単位</option><option value={2}>2 単位</option><option value={4}>4 単位</option></select></div>
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-[fadeIn_0.2s_ease-out]">
+                <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-800 text-sm">{editingCourse ? '授業の編集' : '新しい授業を追加'}</h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-xl leading-none">&times;</button>
+                </div>
+                <form onSubmit={handleSaveCourse} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 mb-1">授業名 <span className="text-red-500">*</span></label>
+                    <input type="text" value={formValues.name} onChange={e => setFormValues({...formValues, name: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:border-[#3b82f6] focus:outline-none" required />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                     <div><label className="block text-xs font-bold text-gray-600 mb-1">曜日</label><select value={formValues.day} onChange={e => setFormValues({...formValues, day: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white">{days.map(d => <option key={d.key} value={d.key}>{d.label}曜日</option>)}</select></div>
-                     <div><label className="block text-xs font-bold text-gray-600 mb-1">時限</label><select value={formValues.period} onChange={e => setFormValues({...formValues, period: Number(e.target.value)})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white">{periods.map(p => <option key={p} value={p}>{p}限</option>)}</select></div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 mb-1">教室</label>
+                    <input type="text" value={formValues.room} onChange={e => setFormValues({...formValues, room: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:border-[#3b82f6] focus:outline-none" />
                   </div>
-                  <div><label className="block text-xs font-bold text-gray-600 mb-1">科目区分</label><select value={formValues.category} onChange={e => setFormValues({...formValues, category: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-[#003B71] focus:outline-none bg-white"><option value="common">共通教育科目</option><option value="specialized">専門教育科目</option><option value="related">関連科目・自由選択</option></select></div>
-                  <div className="pt-4 border-t border-gray-100 flex justify-between items-center gap-2">{editingCourse ? <button type="button" onClick={() => handleDeleteCourse(editingCourse.id)} className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium">削除する</button> : <div />}<div className="flex gap-2"><button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium">キャンセル</button><button type="submit" className="bg-[#003B71] text-white px-5 py-2 rounded-lg text-sm font-medium">保存する</button></div></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">学期</label>
+                      <select value={formValues.quarter} onChange={e => setFormValues({...formValues, quarter: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white">
+                        {quarters.map(q => <option key={q} value={q}>{q}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">単位</label>
+                      <select value={formValues.credits} onChange={e => setFormValues({...formValues, credits: Number(e.target.value)})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white">
+                        <option value={1}>1 単位</option><option value={2}>2 単位</option><option value={4}>4 単位</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">曜日</label>
+                      <select value={formValues.day} onChange={e => setFormValues({...formValues, day: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white">
+                        {days.map(d => <option key={d.key} value={d.key}>{d.label}曜日</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">時限</label>
+                      <select value={formValues.period} onChange={e => setFormValues({...formValues, period: Number(e.target.value)})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white">
+                        {periods.map(p => <option key={p} value={p}>{p}限</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="pt-4 mt-2 border-t border-gray-100 flex justify-between items-center">
+                    {editingCourse ? (
+                      <button type="button" onClick={() => handleDeleteCourse(editingCourse.id)} className="text-red-500 text-xs font-bold px-2 py-2">削除</button>
+                    ) : <div></div>}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl text-xs font-bold">キャンセル</button>
+                      <button type="submit" className="bg-[#3b82f6] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm">保存</button>
+                    </div>
+                  </div>
                 </form>
               </div>
             </div>
