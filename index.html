@@ -57,6 +57,17 @@
         return saved ? JSON.parse(saved) : initialCourses;
       });
 
+      // 各卒業要件項目のカウンター用ステート
+      const [creditCounts, setCreditCounts] = useState(() => {
+        const saved = localStorage.getItem('wadai_credit_counts');
+        return saved ? JSON.parse(saved) : {
+          mirai: 0, kikan: 0, joho: 0, eigoAB: 0, eigoCD: 0, ds: 0,
+          kisoEnshu: 0, keizaiNyumon: 0, tokeiNyumon: 0, progHissu: 0, progSenHissu: 0, progSen: 0, taProg: 0,
+          hatten: 0, senmon: 0, sotsuken: 0,
+          jiyu: 0
+        };
+      });
+
       const [activeTab, setActiveTab] = useState('timetable');
       const [activeQuarter, setActiveQuarter] = useState('1Q');
       
@@ -74,6 +85,11 @@
       useEffect(() => {
         localStorage.setItem('wadai_courses', JSON.stringify(courses));
       }, [courses]);
+
+      // カウンター変更時に自動保存
+      useEffect(() => {
+        localStorage.setItem('wadai_credit_counts', JSON.stringify(creditCounts));
+      }, [creditCounts]);
 
       const days = [
         { key: 'Mon', label: '月' },
@@ -95,6 +111,45 @@
       
       const quarters = ['1Q', '2Q', '3Q', '4Q'];
       const semesters = ['1年前期', '1年後期', '2年前期', '2年後期', '3年前期', '3年後期', '4年前期', '4年後期'];
+
+      // 卒業要件のデータ構造の定義
+      const creditStructure = [
+        {
+          category: '教養教育科目',
+          totalTarget: 25,
+          items: [
+            { key: 'mirai', label: '教養科目(基幹) 「わかやま未来学」', target: 1 },
+            { key: 'kikan', label: '「わかやま未来学」以外の教養科目(基幹)', target: 12 },
+            { key: 'joho', label: '教養科目(実践) 「情報処理ⅠA」・「情報処理ⅠB」', target: 2 },
+            { key: 'eigoAB', label: '教養科目(実践) 「英語ⅠA」・「英語ⅠB」', target: 4 },
+            { key: 'eigoCD', label: '教養科目(実践) 「英語ⅠC」・「英語ⅠD」又は初修外国語', target: 4 },
+            { key: 'ds', label: '教養科目(実践) データサイエンスへの誘いA・B', target: 2 },
+          ]
+        },
+        {
+          category: '専門教育科目',
+          totalTarget: 81,
+          items: [
+            { key: 'kisoEnshu', label: '専門基礎科目 「基礎演習Ⅰ」・「基礎演習Ⅱ」', target: 2 },
+            { key: 'keizaiNyumon', label: '専門必修科目 「経済学入門A」・「経済学入門B」', target: 2 },
+            { key: 'tokeiNyumon', label: '専門必修科目 「統計学入門A」・「統計学入門B」', target: 2 },
+            { key: 'progHissu', label: 'プログラム科目 履修プログラム必修科目', target: 2 },
+            { key: 'progSenHissu', label: 'プログラム科目 履修プログラム選択必修科目', target: 14 },
+            { key: 'progSen', label: 'プログラム科目 履修プログラム選択科目', target: 24 },
+            { key: 'taProg', label: 'プログラム科目 他プログラム・地域・キャリアデザイン科目', target: 27 },
+            { key: 'hatten', label: '専門演習科目 「発展演習」', target: 1 },
+            { key: 'senmon', label: '専門演習科目 「専門演習」', target: 3 },
+            { key: 'sotsuken', label: '専門演習科目 「卒業研究」', target: 4 },
+          ]
+        },
+        {
+          category: '連携展開科目または自由選択',
+          totalTarget: 18,
+          items: [
+            { key: 'jiyu', label: '連携展開科目、各超過単位、他学部開放科目等', target: 18 },
+          ]
+        }
+      ];
 
       const getCourseAt = (day, period) => {
         return courses.find(c => (c.quarter || '1Q') === activeQuarter && c.day === day && Number(c.period) === Number(period));
@@ -137,13 +192,25 @@
         }
       };
 
-      // 今日の曜日を取得（UIの青丸ハイライト用）
+      const handleIncrement = (key) => {
+        setCreditCounts(prev => ({ ...prev, [key]: prev[key] + 1 }));
+      };
+
+      const handleDecrement = (key) => {
+        setCreditCounts(prev => ({ ...prev, [key]: Math.max(0, prev[key] - 1) }));
+      };
+
+      const getCategoryTotal = (items) => {
+        return items.reduce((sum, item) => sum + (creditCounts[item.key] || 0), 0);
+      };
+
+      const totalCountedCredits = Object.values(creditCounts).reduce((sum, val) => sum + val, 0);
       const todayIndex = new Date().getDay() - 1; // 0=Mon, 4=Fri
 
       return (
         <div className="min-h-screen flex flex-col">
           
-          {/* Header - 画像に合わせた白背景のヘッダー */}
+          {/* Header - 白背景のヘッダー */}
           <header className="bg-white text-gray-800 sticky top-0 z-30 pt-safe border-b border-gray-100">
             <div className="flex justify-between items-center px-4 py-3 relative max-w-7xl mx-auto w-full">
               <div className="flex-1"></div>
@@ -265,14 +332,62 @@
             )}
 
             {activeTab === 'credits' && (
-              <div className="p-4 mt-4 max-w-2xl mx-auto space-y-4">
-                <h2 className="text-lg font-bold text-gray-800 mb-2 px-1">単位進捗</h2>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-gray-500">登録済み総単位数</div>
-                    <div className="text-5xl font-extrabold text-[#3b82f6] my-2">{courses.reduce((sum, c) => sum + Number(c.credits), 0)} <span className="text-base font-normal text-gray-400">/ 124 単位</span></div>
+              <div className="p-4 max-w-2xl mx-auto space-y-5 pb-24">
+                <h2 className="text-lg font-bold text-gray-800 px-1">卒業要件単位の確認</h2>
+                
+                {/* 総取得単位数 */}
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
+                  <div className="text-xs font-bold text-gray-400">取得済み総単位数</div>
+                  <div className="text-5xl font-extrabold text-[#3b82f6] my-2">
+                    {totalCountedCredits} <span className="text-base font-normal text-gray-400">/ 124 単位</span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-[#3b82f6] h-full transition-all duration-300" style={{ width: `${Math.min((totalCountedCredits / 124) * 100, 100)}%` }}></div>
                   </div>
                 </div>
+
+                {/* 経済学部 卒業要件の各項目内訳カウンター */}
+                {creditStructure.map(cat => {
+                  const catTotal = getCategoryTotal(cat.items);
+                  return (
+                    <div key={cat.category} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                        <span className="font-bold text-gray-800 text-xs">{cat.category}</span>
+                        <span className="text-xs font-bold text-[#3b82f6]">
+                          {catTotal} / {cat.totalTarget} 単位
+                        </span>
+                      </div>
+                      <div className="divide-y divide-gray-50 px-4">
+                        {cat.items.map(item => (
+                          <div key={item.key} className="py-3 flex justify-between items-center gap-4">
+                            <span className="text-xs text-gray-600 font-medium leading-tight">{item.label}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button 
+                                type="button" 
+                                onClick={() => handleDecrement(item.key)}
+                                className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold active:bg-gray-100 transition-colors select-none"
+                              >
+                                -
+                              </button>
+                              <div className="w-12 text-center">
+                                <span className="text-xs font-bold text-gray-800">{creditCounts[item.key] || 0}</span>
+                                <span className="text-[10px] text-gray-400 mx-0.5">/</span>
+                                <span className="text-[10px] text-gray-400">{item.target}</span>
+                              </div>
+                              <button 
+                                type="button" 
+                                onClick={() => handleIncrement(item.key)}
+                                className="w-7 h-7 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[#3b82f6] text-sm font-bold active:bg-blue-100 transition-colors select-none"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
