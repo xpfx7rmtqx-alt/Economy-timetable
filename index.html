@@ -52,10 +52,42 @@
         { id: '10', name: 'データを用いた実証分析入門', room: '西2号館W2-102', day: 'Tue', period: 4, credits: 2, category: 'specialized', quarter: '1Q' },
       ];
 
-      const [courses, setCourses] = useState(() => {
-        const saved = localStorage.getItem('wadai_courses');
-        return saved ? JSON.parse(saved) : initialCourses;
+      // ▼ 変更部分：年度・学年の切り替えと、それに応じた時間割データの管理 ▼
+      const yearLevels = ['2024年度1回生', '2025年度2回生', '2026年度3回生', '2027年度4回生'];
+      const [activeYearLevel, setActiveYearLevel] = useState('2026年度3回生');
+      const [isYearLevelMenuOpen, setIsYearLevelMenuOpen] = useState(false);
+
+      const [allCourses, setAllCourses] = useState(() => {
+        const savedAll = localStorage.getItem('wadai_all_courses');
+        if (savedAll) return JSON.parse(savedAll);
+        
+        // 既存の単一データがあれば引き継ぐ
+        const savedSingle = localStorage.getItem('wadai_courses');
+        const defaultCourses = savedSingle ? JSON.parse(savedSingle) : initialCourses;
+        return {
+          '2024年度1回生': [],
+          '2025年度2回生': [],
+          '2026年度3回生': defaultCourses,
+          '2027年度4回生': []
+        };
       });
+
+      useEffect(() => {
+        localStorage.setItem('wadai_all_courses', JSON.stringify(allCourses));
+      }, [allCourses]);
+
+      const courses = allCourses[activeYearLevel] || [];
+      
+      const setCourses = (newCoursesOrUpdater) => {
+        setAllCourses(prev => {
+          const currentYearCourses = prev[activeYearLevel] || [];
+          const newCourses = typeof newCoursesOrUpdater === 'function' 
+            ? newCoursesOrUpdater(currentYearCourses) 
+            : newCoursesOrUpdater;
+          return { ...prev, [activeYearLevel]: newCourses };
+        });
+      };
+      // ▲ 変更部分おわり ▲
 
       // 各卒業要件項目のカウンター用ステート
       const [creditCounts, setCreditCounts] = useState(() => {
@@ -81,10 +113,6 @@
       useEffect(() => {
         localStorage.setItem('wadai_user', JSON.stringify(user));
       }, [user]);
-
-      useEffect(() => {
-        localStorage.setItem('wadai_courses', JSON.stringify(courses));
-      }, [courses]);
 
       // カウンター変更時に自動保存
       useEffect(() => {
@@ -214,7 +242,44 @@
           <header className="bg-white text-gray-800 sticky top-0 z-30 pt-safe border-b border-gray-100">
             <div className="flex justify-between items-center px-4 py-3 relative max-w-7xl mx-auto w-full">
               <div className="flex-1"></div>
-              <h1 className="text-[19px] font-bold flex-1 text-center whitespace-nowrap">2026年 1学期</h1>
+              
+              {/* ▼ 変更部分：タイトルをタップ可能なドロップダウンメニュー化 ▼ */}
+              <div className="flex-1 flex justify-center relative">
+                <button 
+                  onClick={() => setIsYearLevelMenuOpen(!isYearLevelMenuOpen)} 
+                  className="flex items-center justify-center gap-1 text-[19px] font-bold whitespace-nowrap active:opacity-70 transition-opacity"
+                >
+                  {activeYearLevel}
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${isYearLevelMenuOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                
+                {isYearLevelMenuOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsYearLevelMenuOpen(false)}
+                    ></div>
+                    <div className="absolute top-[calc(100%+0.5rem)] w-48 bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-50">
+                      {yearLevels.map(yl => (
+                        <button
+                          key={yl}
+                          onClick={() => {
+                            setActiveYearLevel(yl);
+                            setIsYearLevelMenuOpen(false);
+                          }}
+                          className={`w-full text-center px-4 py-3 text-sm font-bold border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors ${activeYearLevel === yl ? 'text-[#3b82f6] bg-blue-50/50' : 'text-gray-700'}`}
+                        >
+                          {yl}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* ▲ 変更部分おわり ▲ */}
+
               <div className="flex-1 flex justify-end">
                 <button onClick={() => alert('下部のタブバー上にあるQ切り替えボタンを使用してください。')} className="text-[11px] font-bold border border-gray-400 text-gray-600 rounded-full px-3 py-1.5 whitespace-nowrap">
                   学期切替
